@@ -119,7 +119,8 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 ## Recommendations
 
 - Close the Codex app before deleting a session when possible
-- Restart the Codex app if the deleted thread still appears in the UI
+- If the deleted thread still appears in the UI, first minimize the Codex app to the taskbar and restore the window, because that often triggers a sidebar refresh
+- Restart the Codex app only if minimizing and restoring the window does not refresh the UI
 - Use preview mode first for every session ID
 
 ## Requirements
@@ -137,4 +138,4 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 ## Limitations
 
 - Local only. This does not remove server-side or account-level chat history.
-- The UI may temporarily show stale threads until Codex refreshes or restarts.
+- The UI may temporarily show stale threads until Codex refreshes; minimizing and restoring the window often helps, but immediate refresh is not guaranteed.

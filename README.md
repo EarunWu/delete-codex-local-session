@@ -119,7 +119,8 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 ## 使用建议
 
 - 条件允许时，先关闭 Codex app 再删除会话
-- 如果删除后界面里仍然显示旧线程，可以重启 Codex app
+- 如果删除后界面里仍然显示旧线程，先把 Codex app 最小化到任务栏，再恢复窗口，这通常会触发侧边栏刷新
+- 如果最小化再恢复后仍未刷新，再重启 Codex app
 - 每次删除前都建议先运行一次预览模式
 
 ## 运行要求
@@ -137,4 +138,4 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 ## 限制
 
 - 仅清理本地数据，不会删除服务端或账号层面的聊天记录
-- 即使本地已删除，Codex 界面也可能因为缓存暂时显示旧线程
+- 即使本地已删除，Codex 界面也可能因为缓存暂时显示旧线程；通常先最小化并恢复窗口即可触发刷新，但仍不保证每次都立即生效

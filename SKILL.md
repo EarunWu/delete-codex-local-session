@@ -56,5 +56,6 @@ python scripts/delete_codex_local_session.py <session-id> --apply
 
 - Default to listing or preview mode unless the user explicitly wants deletion.
 - Tell the user to close the Codex app first when possible, because the UI may cache stale state.
-- Tell the user that a restart may still be needed after deletion.
+- If the deleted thread still appears in the Codex app, tell the user to minimize the app to the taskbar and restore it first, because that often triggers a sidebar refresh.
+- Tell the user that a restart may still be needed after deletion if minimizing and restoring the window does not refresh the UI.
 - Do not claim that this skill deletes cloud/account history. It only cleans up local Codex storage.
