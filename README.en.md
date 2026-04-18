@@ -24,6 +24,13 @@ This skill is designed for local Codex session management and cleanup only. It d
 - `--vacuum` is optional and compacts touched SQLite databases after deletion
 - `--keep-global-state` leaves `.codex-global-state.json` untouched
 
+## Disclaimer
+
+- This skill only operates on local Codex data under `CODEX_HOME` or `~/.codex`. It does not delete cloud, account-level, or server-side chat history.
+- Deletion is destructive. Run preview mode first and make your own backups when needed before removing local data.
+- Codex local directory layouts, SQLite schemas, and internal storage details may change over time. Verify behavior on the version you are using.
+- You are responsible for how you export, delete, back up, or share local conversation data, including compliance with your device policies, team rules, or legal obligations.
+
 ## Install
 
 Place this repository's contents in your Codex skills directory as:
