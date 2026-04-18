@@ -60,6 +60,11 @@ Use $delete-codex-local-session to preview local session 019d...
 Use $delete-codex-local-session to delete local session 019d...
 ```
 
+Default interpretation:
+
+- Requests like "conversation list", "session list", or "conversation ID list" should return the listing script's native output
+- Only return bare IDs when the user explicitly asks for IDs only
+
 ## Use from the command line
 
 List local sessions by folder:

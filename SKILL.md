@@ -16,23 +16,24 @@ Use the bundled scripts to list local sessions or delete one by its ID.
 python scripts/list_codex_sessions_by_folder.py
 ```
 
-3. Add `--show-paths` when the user also wants rollout file paths.
-4. Add `--include-missing` when the user wants DB rows whose rollout file is already missing.
-5. When the user wants to inspect or delete one session, run the deletion script in preview mode first:
+3. If the user says "conversation list", "session list", "conversation ID list", or similar, default to returning the listing script's output as-is. Do not collapse it to bare IDs or reformat it into an ID-only list unless the user explicitly asks for IDs only.
+4. Add `--show-paths` when the user also wants rollout file paths.
+5. Add `--include-missing` when the user wants DB rows whose rollout file is already missing.
+6. When the user wants to inspect or delete one session, run the deletion script in preview mode first:
 
 ```powershell
 python scripts/delete_codex_local_session.py <session-id>
 ```
 
-6. Show the user what the script found.
-7. Only run deletion after the user clearly asks for it:
+7. Show the user what the script found.
+8. Only run deletion after the user clearly asks for it:
 
 ```powershell
 python scripts/delete_codex_local_session.py <session-id> --apply
 ```
 
-8. Add `--vacuum` only when the user wants SQLite compaction after deletion.
-9. Add `--keep-global-state` only when the user explicitly wants `.codex-global-state.json` left untouched.
+9. Add `--vacuum` only when the user wants SQLite compaction after deletion.
+10. Add `--keep-global-state` only when the user explicitly wants `.codex-global-state.json` left untouched.
 
 ## Listing Script Output
 
@@ -40,6 +41,7 @@ python scripts/delete_codex_local_session.py <session-id> --apply
 - Shows `session_id | title`
 - Marks archived sessions with `| archived`
 - Can also mark DB-only rows with `| missing` when `--include-missing` is used
+- Treat requests like "give me the conversation ID list" as a request for the listing script's native output, unless the user explicitly asks for IDs only
 
 ## What The Script Removes
 
