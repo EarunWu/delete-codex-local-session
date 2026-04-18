@@ -8,6 +8,7 @@ This skill is designed for local cleanup only. It helps remove a thread from loc
 
 ## What it does
 
+- List local session IDs and titles grouped by local session folders
 - Preview which local files and database records match a session ID
 - Delete matching rollout transcripts under `sessions/` and `archived_sessions/`
 - Remove matching entries from `session_index.jsonl`
@@ -53,11 +54,30 @@ delete-codex-local-session/
 Ask Codex to use the skill explicitly:
 
 ```text
+Use $delete-codex-local-session to list local session IDs and titles
 Use $delete-codex-local-session to preview local session 019d...
 Use $delete-codex-local-session to delete local session 019d...
 ```
 
 ## Use from the command line
+
+List local sessions by folder:
+
+```powershell
+python scripts/list_codex_sessions_by_folder.py
+```
+
+List sessions and show full rollout paths:
+
+```powershell
+python scripts/list_codex_sessions_by_folder.py --show-paths
+```
+
+Include DB rows whose rollout file is missing:
+
+```powershell
+python scripts/list_codex_sessions_by_folder.py --include-missing
+```
 
 Preview only:
 
@@ -98,6 +118,7 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 
 - `SKILL.md`: skill trigger and usage guidance
 - `agents/openai.yaml`: UI-facing metadata
+- `scripts/list_codex_sessions_by_folder.py`: list local session IDs and titles by folder
 - `scripts/delete_codex_local_session.py`: the actual cleanup script
 
 ## Limitations

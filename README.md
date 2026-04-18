@@ -8,6 +8,7 @@
 
 ## 功能
 
+- 按本地会话文件夹分组列出 `session_id` 和会话标题
 - 先预览某个会话 ID 在本地命中了哪些文件和数据库记录
 - 删除 `sessions/` 和 `archived_sessions/` 下对应的 transcript 文件
 - 删除 `session_index.jsonl` 中对应的索引项
@@ -53,11 +54,30 @@ delete-codex-local-session/
 你可以显式点名这个 skill：
 
 ```text
+用 $delete-codex-local-session 列出本地会话 id 和标题
 用 $delete-codex-local-session 预览本地会话 019d...
 用 $delete-codex-local-session 删除本地会话 019d...
 ```
 
 ## 在命令行中使用
+
+按文件夹列出本地会话：
+
+```powershell
+python scripts/list_codex_sessions_by_folder.py
+```
+
+列出时同时显示完整路径：
+
+```powershell
+python scripts/list_codex_sessions_by_folder.py --show-paths
+```
+
+列出时包含数据库里仍有记录、但 transcript 文件已丢失的会话：
+
+```powershell
+python scripts/list_codex_sessions_by_folder.py --include-missing
+```
 
 只预览，不删除：
 
@@ -98,6 +118,7 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 
 - `SKILL.md`：skill 的触发说明与使用流程
 - `agents/openai.yaml`：UI 展示相关元数据
+- `scripts/list_codex_sessions_by_folder.py`：按文件夹列出本地会话 ID 和标题
 - `scripts/delete_codex_local_session.py`：实际执行清理的脚本
 
 ## 限制

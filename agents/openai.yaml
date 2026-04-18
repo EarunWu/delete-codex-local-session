@@ -1,4 +1,4 @@
 interface:
   display_name: "Delete Codex Session"
-  short_description: "Delete a local Codex thread by session ID"
-  default_prompt: "Use $delete-codex-local-session to preview or delete a local Codex thread by its session ID."
+  short_description: "List or delete local Codex sessions"
+  default_prompt: "Use $delete-codex-local-session to list local Codex sessions or delete one by its session ID."
