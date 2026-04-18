@@ -2,9 +2,9 @@
 
 # delete-codex-local-session
 
-一个用于按会话 ID 检查并删除本地 Codex 会话的 skill。
+一个用于列出、检查并按会话 ID 删除本地 Codex 会话的 skill。
 
-这个 skill 只用于清理本地 Codex 存储，不会删除云端或账号层面的聊天记录。
+这个 skill 只用于本地 Codex 会话管理和清理，不会删除云端或账号层面的聊天记录。
 
 ## 功能
 
@@ -46,6 +46,7 @@ delete-codex-local-session/
 ├── agents/
 │   └── openai.yaml
 └── scripts/
+    ├── list_codex_sessions_by_folder.py
     └── delete_codex_local_session.py
 ```
 

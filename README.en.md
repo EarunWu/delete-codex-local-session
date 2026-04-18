@@ -2,9 +2,9 @@
 
 # delete-codex-local-session
 
-A Codex skill for inspecting and deleting a local Codex session by session ID.
+A Codex skill for listing, inspecting, and deleting local Codex sessions by session ID.
 
-This skill is designed for local cleanup only. It helps remove a thread from local Codex storage on disk. It does not delete cloud/account chat history.
+This skill is designed for local Codex session management and cleanup only. It does not delete cloud/account chat history.
 
 ## What it does
 
@@ -46,6 +46,7 @@ delete-codex-local-session/
 ├── agents/
 │   └── openai.yaml
 └── scripts/
+    ├── list_codex_sessions_by_folder.py
     └── delete_codex_local_session.py
 ```
 
