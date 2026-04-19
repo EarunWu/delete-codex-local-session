@@ -72,6 +72,18 @@ Default interpretation:
 - Requests like "conversation list", "session list", or "conversation ID list" should return the listing script's native output
 - Only return bare IDs when the user explicitly asks for IDs only
 
+## Usage examples
+
+These screenshots show typical natural-language cleanup requests in a Codex conversation.
+
+Delete local sessions before a specific date:
+
+![Delete local sessions before a specific date](./docs/images/usage-delete-by-date.png)
+
+Delete archived local sessions:
+
+![Delete archived local sessions](./docs/images/usage-delete-archived.png)
+
 ## Use from the command line
 
 List local sessions by folder:
@@ -132,6 +144,7 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 
 - `SKILL.md`: skill trigger and usage guidance
 - `agents/openai.yaml`: UI-facing metadata
+- `docs/images/`: README usage screenshots
 - `scripts/list_codex_sessions_by_folder.py`: list local session IDs and titles by folder
 - `scripts/delete_codex_local_session.py`: the actual cleanup script
 

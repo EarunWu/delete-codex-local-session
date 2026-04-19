@@ -72,6 +72,18 @@ delete-codex-local-session/
 - 当你说“对话列表”“会话列表”“对话 id 列表”时，默认直接返回列举脚本的原始输出结果
 - 只有你明确说“只要 id”时，才按纯 ID 列表理解
 
+## 使用示例
+
+下面两张截图展示了在 Codex 对话中用自然语言清理本地会话的典型方式。
+
+删除指定日期之前的本地会话：
+
+![删除指定日期之前的本地会话](./docs/images/usage-delete-by-date.png)
+
+删除已归档的本地会话：
+
+![删除已归档的本地会话](./docs/images/usage-delete-archived.png)
+
 ## 在命令行中使用
 
 按文件夹列出本地会话：
@@ -132,6 +144,7 @@ python scripts/delete_codex_local_session.py <session-id> --apply --keep-global-
 
 - `SKILL.md`：skill 的触发说明与使用流程
 - `agents/openai.yaml`：UI 展示相关元数据
+- `docs/images/`：README 使用示例截图
 - `scripts/list_codex_sessions_by_folder.py`：按文件夹列出本地会话 ID 和标题
 - `scripts/delete_codex_local_session.py`：实际执行清理的脚本
 
