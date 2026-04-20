@@ -29,11 +29,12 @@ python scripts/delete_codex_local_session.py <session-id>
 8. Only run deletion after the user clearly asks for it:
 
 ```powershell
-python scripts/delete_codex_local_session.py <session-id> --apply
+python scripts/delete_codex_local_session.py <session-id> --apply --vacuum
 ```
 
-9. Add `--vacuum` only when the user wants SQLite compaction after deletion.
-10. Add `--keep-global-state` only when the user explicitly wants `.codex-global-state.json` left untouched.
+9. Include `--vacuum` by default for Codex chat deletion requests so SQLite files are compacted after deletion.
+10. Omit `--vacuum` only when the user explicitly asks to delete without compaction.
+11. Add `--keep-global-state` only when the user explicitly wants `.codex-global-state.json` left untouched.
 
 ## Listing Script Output
 
@@ -47,7 +48,8 @@ python scripts/delete_codex_local_session.py <session-id> --apply
 
 - Matching rollout transcript files under `sessions/` and `archived_sessions/`
 - Matching `session_index.jsonl` entries
-- Matching rows in `state*.sqlite` from `threads`, `thread_dynamic_tools`, and `thread_spawn_edges`
+- Matching rows in `state*.sqlite` from `threads`, `stage1_outputs`, `thread_dynamic_tools`, and `thread_spawn_edges`
+- Matching `agent_job_items.assigned_thread_id` references in `state*.sqlite` are cleared to `NULL`
 - Matching rows in `logs*.sqlite`
 - Matching `generated_images/<session-id>/` directories
 - Exact-key and exact-value references to the session ID inside `.codex-global-state.json`

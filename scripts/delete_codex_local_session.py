@@ -98,6 +98,21 @@ def count_rows(conn: sqlite3.Connection, query: str, params: tuple[Any, ...]) ->
     return int(row[0] if row else 0)
 
 
+def table_exists(conn: sqlite3.Connection, table_name: str) -> bool:
+    return count_rows(
+        conn,
+        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = ?",
+        (table_name,),
+    ) > 0
+
+
+def column_exists(conn: sqlite3.Connection, table_name: str, column_name: str) -> bool:
+    if not table_exists(conn, table_name):
+        return False
+    cursor = conn.execute(f'PRAGMA table_info("{table_name}")')
+    return any(row[1] == column_name for row in cursor.fetchall())
+
+
 def scrub_json_value(value: Any, needle: str) -> tuple[Any, bool]:
     if isinstance(value, dict):
         changed = False
@@ -166,7 +181,13 @@ def build_plan(session_id: str, codex_home: Path, keep_global_state: bool) -> Se
                 plan.thread_rows.extend(thread_rows)
 
             plan.state_db_counts[str(state_db)] = {
-                "threads": len(thread_rows),
+                "stage1_outputs": count_rows(
+                    conn,
+                    "SELECT COUNT(*) FROM stage1_outputs WHERE thread_id = ?",
+                    (session_id,),
+                )
+                if column_exists(conn, "stage1_outputs", "thread_id")
+                else 0,
                 "thread_dynamic_tools": count_rows(
                     conn,
                     "SELECT COUNT(*) FROM thread_dynamic_tools WHERE thread_id = ?",
@@ -177,6 +198,14 @@ def build_plan(session_id: str, codex_home: Path, keep_global_state: bool) -> Se
                     "SELECT COUNT(*) FROM thread_spawn_edges WHERE parent_thread_id = ? OR child_thread_id = ?",
                     (session_id, session_id),
                 ),
+                "agent_job_items_assigned_thread_id": count_rows(
+                    conn,
+                    "SELECT COUNT(*) FROM agent_job_items WHERE assigned_thread_id = ?",
+                    (session_id,),
+                )
+                if column_exists(conn, "agent_job_items", "assigned_thread_id")
+                else 0,
+                "threads": len(thread_rows),
             }
 
     for logs_db in find_sqlite_files(codex_home, "logs*.sqlite"):
@@ -310,9 +339,18 @@ def rewrite_global_state(global_state_path: Path, session_id: str) -> bool:
 
 
 def delete_rows_from_state_db(db_path: Path, session_id: str, vacuum: bool) -> dict[str, int]:
-    deleted = {"threads": 0, "thread_dynamic_tools": 0, "thread_spawn_edges": 0}
+    deleted = {
+        "stage1_outputs": 0,
+        "thread_dynamic_tools": 0,
+        "thread_spawn_edges": 0,
+        "agent_job_items_assigned_thread_id": 0,
+        "threads": 0,
+    }
     with sqlite3.connect(db_path, timeout=30) as conn:
         cursor = conn.cursor()
+        if column_exists(conn, "stage1_outputs", "thread_id"):
+            cursor.execute("DELETE FROM stage1_outputs WHERE thread_id = ?", (session_id,))
+            deleted["stage1_outputs"] = cursor.rowcount
         cursor.execute("DELETE FROM thread_dynamic_tools WHERE thread_id = ?", (session_id,))
         deleted["thread_dynamic_tools"] = cursor.rowcount
         cursor.execute(
@@ -320,6 +358,12 @@ def delete_rows_from_state_db(db_path: Path, session_id: str, vacuum: bool) -> d
             (session_id, session_id),
         )
         deleted["thread_spawn_edges"] = cursor.rowcount
+        if column_exists(conn, "agent_job_items", "assigned_thread_id"):
+            cursor.execute(
+                "UPDATE agent_job_items SET assigned_thread_id = NULL WHERE assigned_thread_id = ?",
+                (session_id,),
+            )
+            deleted["agent_job_items_assigned_thread_id"] = cursor.rowcount
         cursor.execute("DELETE FROM threads WHERE id = ?", (session_id,))
         deleted["threads"] = cursor.rowcount
         conn.commit()
@@ -358,7 +402,8 @@ def apply_plan(plan: SessionPlan, keep_global_state: bool, vacuum: bool) -> None
         if any(deleted.values()):
             print(f"Updated state db: {state_db}")
             for table_name, count in deleted.items():
-                print(f"  {table_name}: deleted {count}")
+                action = "cleared" if table_name == "agent_job_items_assigned_thread_id" else "deleted"
+                print(f"  {table_name}: {action} {count}")
 
     for logs_db in find_sqlite_files(plan.codex_home, "logs*.sqlite"):
         deleted = delete_rows_from_logs_db(logs_db, plan.session_id, vacuum)
@@ -416,7 +461,7 @@ def main() -> int:
     apply_plan(plan, args.keep_global_state, args.vacuum)
     print()
     print("Deletion finished.")
-    print("Tip: restart the Codex app if the deleted thread still appears in the UI.")
+    print("Tip: minimize and restore the Codex app if the deleted thread still appears in the UI.")
     return 0
 
 

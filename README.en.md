@@ -12,7 +12,8 @@ This skill is designed for local Codex session management and cleanup only. It d
 - Preview which local files and database records match a session ID
 - Delete matching rollout transcripts under `sessions/` and `archived_sessions/`
 - Remove matching entries from `session_index.jsonl`
-- Remove matching rows from `state*.sqlite`
+- Remove matching rows from `state*.sqlite` tables including `threads`, `stage1_outputs`, `thread_dynamic_tools`, and `thread_spawn_edges`
+- Clear matching `agent_job_items.assigned_thread_id` references in `state*.sqlite` to `NULL`
 - Remove matching rows from `logs*.sqlite`
 - Remove matching generated image folders under `generated_images/<session-id>/`
 - Remove exact-key and exact-value references from `.codex-global-state.json`
@@ -21,7 +22,8 @@ This skill is designed for local Codex session management and cleanup only. It d
 
 - Preview is the default mode
 - Nothing is deleted unless you pass `--apply`
-- `--vacuum` is optional and compacts touched SQLite databases after deletion
+- When the skill deletes a session from Codex chat, it uses `--vacuum` by default to compact touched SQLite databases after deletion
+- When you run the script directly from the command line, SQLite compaction only happens if you explicitly pass `--vacuum`
 - `--keep-global-state` leaves `.codex-global-state.json` untouched
 
 ## Disclaimer
@@ -71,6 +73,7 @@ Default interpretation:
 
 - Requests like "conversation list", "session list", or "conversation ID list" should return the listing script's native output
 - Only return bare IDs when the user explicitly asks for IDs only
+- When a user asks to delete a local session from Codex chat, use `--vacuum` by default; omit compaction only when the user explicitly asks to delete without compaction
 
 ## Usage examples
 

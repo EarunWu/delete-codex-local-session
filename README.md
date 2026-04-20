@@ -12,7 +12,8 @@
 - 先预览某个会话 ID 在本地命中了哪些文件和数据库记录
 - 删除 `sessions/` 和 `archived_sessions/` 下对应的 transcript 文件
 - 删除 `session_index.jsonl` 中对应的索引项
-- 删除 `state*.sqlite` 中对应的记录
+- 删除 `state*.sqlite` 中 `threads`、`stage1_outputs`、`thread_dynamic_tools`、`thread_spawn_edges` 对应的记录
+- 将 `state*.sqlite` 中 `agent_job_items.assigned_thread_id` 对应的引用清空为 `NULL`
 - 删除 `logs*.sqlite` 中对应的日志记录
 - 删除 `generated_images/<session-id>/` 下对应的图片目录
 - 删除 `.codex-global-state.json` 中与该会话 ID 精确匹配的键或值
@@ -21,7 +22,8 @@
 
 - 默认只做预览
 - 只有加上 `--apply` 才会真正删除
-- `--vacuum` 是可选项，用于在删除后压缩被修改的 SQLite 数据库
+- 在 Codex 对话中使用 skill 删除时，默认会带上 `--vacuum`，用于删除后压缩被修改的 SQLite 数据库
+- 在命令行直接运行脚本时，只有显式加上 `--vacuum` 才会压缩
 - `--keep-global-state` 可用于保留 `.codex-global-state.json` 不变
 
 ## 免责声明
@@ -71,6 +73,7 @@ delete-codex-local-session/
 
 - 当你说“对话列表”“会话列表”“对话 id 列表”时，默认直接返回列举脚本的原始输出结果
 - 只有你明确说“只要 id”时，才按纯 ID 列表理解
+- 当你在 Codex 对话中说“删除本地会话”时，默认执行删除并带上 `--vacuum`；只有明确说“不压缩”时才省略压缩
 
 ## 使用示例
 
