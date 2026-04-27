@@ -9,7 +9,7 @@ This skill is designed for local Codex session management and cleanup only. It d
 ## What it does
 
 - List local session IDs and titles grouped by local session folders
-- Preview which local files and database records match a session ID
+- Preview which local files and database records match one or more session IDs
 - Delete matching rollout transcripts under `sessions/` and `archived_sessions/`
 - Remove matching entries from `session_index.jsonl`
 - Remove matching rows from `state*.sqlite` tables including `threads`, `stage1_outputs`, `thread_dynamic_tools`, and `thread_spawn_edges`
@@ -73,6 +73,8 @@ Default interpretation:
 
 - Requests like "conversation list", "session list", or "conversation ID list" should return the listing script's native output
 - Only return bare IDs when the user explicitly asks for IDs only
+- When a user gives exact session IDs and asks to "delete these IDs", treat that as deletion confirmation without asking again
+- Use one batch command for multiple IDs; use `--quiet` for large batches when a count summary is enough
 - When a user asks to delete a local session from Codex chat, use `--vacuum` by default; omit compaction only when the user explicitly asks to delete without compaction
 
 ## Usage examples
@@ -113,10 +115,22 @@ Preview only:
 python scripts/delete_codex_local_session.py <session-id>
 ```
 
+Preview multiple sessions:
+
+```powershell
+python scripts/delete_codex_local_session.py <session-id> <session-id> ...
+```
+
 Delete the local session:
 
 ```powershell
 python scripts/delete_codex_local_session.py <session-id> --apply
+```
+
+Batch-delete multiple local sessions with summary-only output:
+
+```powershell
+python scripts/delete_codex_local_session.py <session-id> <session-id> ... --apply --vacuum --quiet
 ```
 
 Delete and compact SQLite databases:

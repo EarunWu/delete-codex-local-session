@@ -46,9 +46,13 @@ class SessionPlan:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Delete a local Codex session by session/thread ID."
+        description="Delete one or more local Codex sessions by session/thread ID."
     )
-    parser.add_argument("session_id", help="Codex local session ID to remove")
+    parser.add_argument(
+        "session_ids",
+        nargs="+",
+        help="Codex local session ID(s) to remove",
+    )
     parser.add_argument(
         "--codex-home",
         type=Path,
@@ -70,7 +74,30 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Do not rewrite .codex-global-state.json.",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print detailed per-session matches. Multiple IDs use compact output by default.",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Print aggregate batch counts only. --verbose overrides this.",
+    )
     return parser.parse_args()
+
+
+def validate_session_ids(raw_session_ids: list[str]) -> list[str]:
+    session_ids: list[str] = []
+    seen: set[str] = set()
+    for session_id in raw_session_ids:
+        if not SESSION_ID_RE.match(session_id):
+            raise ValueError(f"Session ID does not look valid: {session_id}")
+        if session_id in seen:
+            continue
+        seen.add(session_id)
+        session_ids.append(session_id)
+    return session_ids
 
 
 def detect_codex_home(override: Path | None) -> Path:
@@ -284,6 +311,65 @@ def print_plan(plan: SessionPlan) -> None:
         print(f"  logs: {count}")
 
 
+def total_state_rows(plan: SessionPlan) -> int:
+    return sum(sum(counts.values()) for counts in plan.state_db_counts.values())
+
+
+def total_log_rows(plan: SessionPlan) -> int:
+    return sum(plan.log_db_counts.values())
+
+
+def first_thread_title(plan: SessionPlan) -> str:
+    for row in plan.thread_rows:
+        title = row.get("title")
+        if title:
+            return " ".join(str(title).split())
+    return ""
+
+
+def shorten(text: str, limit: int = 80) -> str:
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
+
+
+def print_compact_plans(plans: list[SessionPlan]) -> None:
+    matched_count = sum(1 for plan in plans if plan.has_anything_to_delete())
+    print(f"Codex home: {plans[0].codex_home}")
+    print(f"Sessions requested: {len(plans)}")
+    print(f"Sessions with local matches: {matched_count}")
+    print()
+    print("Compact matches:")
+    for plan in plans:
+        status = "matches" if plan.has_anything_to_delete() else "no matches"
+        title = first_thread_title(plan)
+        title_part = f" | title={shorten(title)!r}" if title else ""
+        image_count = 1 if plan.generated_image_dir else 0
+        global_state = "yes" if plan.global_state_would_change else "no"
+        print(
+            f"- {plan.session_id} | {status}{title_part} | "
+            f"rollout_files={len(plan.rollout_files)} "
+            f"state_rows={total_state_rows(plan)} "
+            f"log_rows={total_log_rows(plan)} "
+            f"index_entries={plan.session_index_matches} "
+            f"image_dirs={image_count} "
+            f"global_state={global_state}"
+        )
+
+
+def print_batch_summary(plans: list[SessionPlan]) -> None:
+    matched_count = sum(1 for plan in plans if plan.has_anything_to_delete())
+    print(f"Codex home: {plans[0].codex_home}")
+    print(f"Sessions requested: {len(plans)}")
+    print(f"Sessions with local matches: {matched_count}")
+    print(f"Rollout files: {sum(len(plan.rollout_files) for plan in plans)}")
+    print(f"State rows/references: {sum(total_state_rows(plan) for plan in plans)}")
+    print(f"Log rows: {sum(total_log_rows(plan) for plan in plans)}")
+    print(f"Session index entries: {sum(plan.session_index_matches for plan in plans)}")
+    print(f"Generated image dirs: {sum(1 for plan in plans if plan.generated_image_dir)}")
+    print(f"Global state changes: {sum(1 for plan in plans if plan.global_state_would_change)}")
+
+
 def rewrite_session_index(session_index_path: Path, session_id: str) -> int:
     if not session_index_path.exists():
         return 0
@@ -396,10 +482,10 @@ def prune_empty_parents(path: Path, stop_at: Path) -> None:
         current = current.parent
 
 
-def apply_plan(plan: SessionPlan, keep_global_state: bool, vacuum: bool) -> None:
+def apply_plan(plan: SessionPlan, keep_global_state: bool, vacuum: bool, verbose: bool = True) -> None:
     for state_db in find_sqlite_files(plan.codex_home, "state*.sqlite"):
         deleted = delete_rows_from_state_db(state_db, plan.session_id, vacuum)
-        if any(deleted.values()):
+        if verbose and any(deleted.values()):
             print(f"Updated state db: {state_db}")
             for table_name, count in deleted.items():
                 action = "cleared" if table_name == "agent_job_items_assigned_thread_id" else "deleted"
@@ -407,37 +493,41 @@ def apply_plan(plan: SessionPlan, keep_global_state: bool, vacuum: bool) -> None
 
     for logs_db in find_sqlite_files(plan.codex_home, "logs*.sqlite"):
         deleted = delete_rows_from_logs_db(logs_db, plan.session_id, vacuum)
-        if deleted:
+        if verbose and deleted:
             print(f"Updated logs db: {logs_db}")
             print(f"  logs: deleted {deleted}")
 
     session_index_path = plan.codex_home / "session_index.jsonl"
     removed_index_entries = rewrite_session_index(session_index_path, plan.session_id)
-    if removed_index_entries:
+    if verbose and removed_index_entries:
         print(f"Updated session index: removed {removed_index_entries} entries")
 
     if not keep_global_state:
         global_state_path = plan.codex_home / ".codex-global-state.json"
-        if rewrite_global_state(global_state_path, plan.session_id):
+        if rewrite_global_state(global_state_path, plan.session_id) and verbose:
             print("Updated .codex-global-state.json")
 
     for rollout_file in plan.rollout_files:
         if rollout_file.exists():
             rollout_file.unlink()
-            print(f"Deleted rollout file: {rollout_file}")
+            if verbose:
+                print(f"Deleted rollout file: {rollout_file}")
             if (plan.codex_home / "sessions") in rollout_file.parents:
                 prune_empty_parents(rollout_file, plan.codex_home / "sessions")
 
     if plan.generated_image_dir and plan.generated_image_dir.exists():
         shutil.rmtree(plan.generated_image_dir)
-        print(f"Deleted generated image dir: {plan.generated_image_dir}")
+        if verbose:
+            print(f"Deleted generated image dir: {plan.generated_image_dir}")
 
 
 def main() -> int:
     args = parse_args()
 
-    if not SESSION_ID_RE.match(args.session_id):
-        print("Session ID does not look valid.", file=sys.stderr)
+    try:
+        session_ids = validate_session_ids(args.session_ids)
+    except ValueError as error:
+        print(str(error), file=sys.stderr)
         return 2
 
     codex_home = detect_codex_home(args.codex_home)
@@ -445,22 +535,45 @@ def main() -> int:
         print(f"Codex home does not exist: {codex_home}", file=sys.stderr)
         return 2
 
-    plan = build_plan(args.session_id, codex_home, args.keep_global_state)
-    print_plan(plan)
+    plans = [
+        build_plan(session_id, codex_home, args.keep_global_state)
+        for session_id in session_ids
+    ]
+    quiet = args.quiet and not args.verbose
+    verbose = args.verbose or (len(plans) == 1 and not quiet)
+
+    if verbose:
+        for index, plan in enumerate(plans):
+            if index:
+                print()
+            print_plan(plan)
+    elif quiet:
+        print_batch_summary(plans)
+    else:
+        print_compact_plans(plans)
     print()
 
-    if not plan.has_anything_to_delete():
-        print("No local matches found for that session ID.")
+    matched_plans = [plan for plan in plans if plan.has_anything_to_delete()]
+    if not matched_plans:
+        noun = "that session ID" if len(plans) == 1 else "those session IDs"
+        print(f"No local matches found for {noun}.")
         return 1
 
     if not args.apply:
-        print("Preview only. Re-run with --apply to delete the local session.")
+        noun = "the local session" if len(plans) == 1 else "these local sessions"
+        print(f"Preview only. Re-run with --apply to delete {noun}.")
         print("Tip: close the Codex app first so it does not keep stale state in memory.")
         return 0
 
-    apply_plan(plan, args.keep_global_state, args.vacuum)
+    for plan in matched_plans:
+        apply_plan(plan, args.keep_global_state, args.vacuum, verbose=verbose)
+
     print()
-    print("Deletion finished.")
+    if verbose:
+        print("Deletion finished.")
+    else:
+        skipped = len(plans) - len(matched_plans)
+        print(f"Deletion finished: processed {len(matched_plans)} matching sessions; skipped {skipped} with no local matches.")
     print("Tip: minimize and restore the Codex app if the deleted thread still appears in the UI.")
     return 0
 

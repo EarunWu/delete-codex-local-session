@@ -9,7 +9,7 @@
 ## 功能
 
 - 按本地会话文件夹分组列出 `session_id` 和会话标题
-- 先预览某个会话 ID 在本地命中了哪些文件和数据库记录
+- 先预览一个或多个会话 ID 在本地命中了哪些文件和数据库记录
 - 删除 `sessions/` 和 `archived_sessions/` 下对应的 transcript 文件
 - 删除 `session_index.jsonl` 中对应的索引项
 - 删除 `state*.sqlite` 中 `threads`、`stage1_outputs`、`thread_dynamic_tools`、`thread_spawn_edges` 对应的记录
@@ -73,6 +73,8 @@ delete-codex-local-session/
 
 - 当你说“对话列表”“会话列表”“对话 id 列表”时，默认直接返回列举脚本的原始输出结果
 - 只有你明确说“只要 id”时，才按纯 ID 列表理解
+- 当你给出明确会话 ID 并要求“删除这些 ID”时，视为已经确认删除，不再额外二次确认
+- 多个 ID 使用一条批量删除命令；大量 ID 可使用 `--quiet` 只输出汇总
 - 当你在 Codex 对话中说“删除本地会话”时，默认执行删除并带上 `--vacuum`；只有明确说“不压缩”时才省略压缩
 
 ## 使用示例
@@ -113,10 +115,22 @@ python scripts/list_codex_sessions_by_folder.py --include-missing
 python scripts/delete_codex_local_session.py <session-id>
 ```
 
+批量预览多个会话：
+
+```powershell
+python scripts/delete_codex_local_session.py <session-id> <session-id> ...
+```
+
 真正删除本地会话：
 
 ```powershell
 python scripts/delete_codex_local_session.py <session-id> --apply
+```
+
+批量删除多个本地会话，并只输出汇总：
+
+```powershell
+python scripts/delete_codex_local_session.py <session-id> <session-id> ... --apply --vacuum --quiet
 ```
 
 删除并顺便压缩 SQLite 数据库：
